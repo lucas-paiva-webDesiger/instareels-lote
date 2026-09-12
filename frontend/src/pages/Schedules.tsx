@@ -13,8 +13,8 @@ export function Schedules() {
   const fetchData = async () => {
     try {
       const [vidsRes, accsRes] = await Promise.all([
-        axios.get('http://localhost:3000/api/videos'),
-        axios.get('http://localhost:3000/api/accounts')
+        axios.get('/api/videos'),
+        axios.get('/api/accounts')
       ]);
       setVideos(vidsRes.data.filter((v: any) => v.scheduledAt && (v.status === 'READY' || v.status === 'QUEUED')));
       setAccounts(accsRes.data);
@@ -30,7 +30,7 @@ export function Schedules() {
 
   const handleRemoveSchedule = async (id: string) => {
     if (confirm('Remover o agendamento? O vídeo voltará para a fila manual.')) {
-      await axios.put(`http://localhost:3000/api/videos/${id}`, { scheduledAt: null });
+      await axios.put(`/api/videos/${id}`, { scheduledAt: null });
       fetchData();
     }
   };

@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
+import { v2 as cloudinary } from 'cloudinary';
+import fs from 'fs';
 
 const prisma = new PrismaClient();
 
@@ -19,8 +21,16 @@ export const uploadVideo = async (req: any, res: Response) => {
 
     if (!account) return res.status(404).json({ error: 'Account not found' });
 
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
-    const fileUrl = `${backendUrl}/uploads/${file.filename}`;
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(file.path, {
+      resource_type: 'video',
+      folder: 'reels'
+    });
+    
+    // Delete local file to save space
+    try { fs.unlinkSync(file.path); } catch (e) {}
+
+    const fileUrl = result.secure_url;
 
     const video = await prisma.video.create({
       data: {
@@ -33,6 +43,7 @@ export const uploadVideo = async (req: any, res: Response) => {
 
     res.status(201).json(video);
   } catch (error) {
+    console.error('Upload Error:', error);
     res.status(500).json({ error: 'Failed to upload video' });
   }
 };
@@ -44,8 +55,16 @@ export const uploadCover = async (req: any, res: Response) => {
 
     if (!file) return res.status(400).json({ error: 'No file uploaded' });
 
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
-    const coverUrl = `${backendUrl}/uploads/${file.filename}`;
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(file.path, {
+      resource_type: 'image',
+      folder: 'reels-covers'
+    });
+    
+    // Delete local file to save space
+    try { fs.unlinkSync(file.path); } catch (e) {}
+
+    const coverUrl = result.secure_url;
 
     const video = await prisma.video.update({
       where: { id },
@@ -54,6 +73,7 @@ export const uploadCover = async (req: any, res: Response) => {
 
     res.json(video);
   } catch (error) {
+    console.error('Cover Upload Error:', error);
     res.status(500).json({ error: 'Failed to upload cover' });
   }
 };

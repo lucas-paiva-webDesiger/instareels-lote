@@ -77,41 +77,8 @@ export class PublisherWorker {
 
   private async publishVideo(video: any) {
     try {
-      console.log(`Uploading video to Uguu.se for public Meta access...`);
-      const filename = video.fileUrl.split('/').pop();
-      const localFilePath = path.join(process.cwd(), 'uploads', filename);
-
-      const form = new FormData();
-      form.append('files[]', fs.createReadStream(localFilePath));
-
-      const uploadRes = await axios.post('https://uguu.se/upload.php', form, {
-        headers: form.getHeaders(),
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity,
-      });
-
-      const finalVideoUrl = uploadRes.data.files[0].url;
-      console.log(`Uguu Upload Success (Direct Link): ${finalVideoUrl}`);
-
-      let finalCoverUrl = undefined;
-      
-      if (video.coverUrl) {
-        console.log(`Uploading cover to Uguu.se for public Meta access...`);
-        const coverFilename = video.coverUrl.split('/').pop();
-        const localCoverPath = path.join(process.cwd(), 'uploads', coverFilename);
-
-        const coverForm = new FormData();
-        coverForm.append('files[]', fs.createReadStream(localCoverPath));
-
-        const coverUploadRes = await axios.post('https://uguu.se/upload.php', coverForm, {
-          headers: coverForm.getHeaders(),
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity,
-        });
-
-        finalCoverUrl = coverUploadRes.data.files[0].url;
-        console.log(`Uguu Cover Upload Success: ${finalCoverUrl}`);
-      }
+      const finalVideoUrl = video.fileUrl;
+      const finalCoverUrl = video.coverUrl || undefined;
 
       // 1. Criar container
       const containerId = await metaService.createMediaContainer(

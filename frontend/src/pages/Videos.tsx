@@ -12,8 +12,8 @@ export function Videos() {
   const fetchData = async () => {
     try {
       const [vidsRes, accsRes] = await Promise.all([
-        axios.get(`http://localhost:3000/api/videos${selectedAccountId ? `?accountId=${selectedAccountId}` : ''}`),
-        axios.get('http://localhost:3000/api/accounts')
+        axios.get(`/api/videos${selectedAccountId ? `?accountId=${selectedAccountId}` : ''}`),
+        axios.get('/api/accounts')
       ]);
       setVideos(vidsRes.data);
       setAccounts(accsRes.data);
@@ -44,7 +44,7 @@ export function Videos() {
         formData.append('video', file);
         formData.append('accountId', selectedAccountId);
 
-        await axios.post('http://localhost:3000/api/videos/upload', formData, {
+        await axios.post('/api/videos/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
@@ -59,7 +59,7 @@ export function Videos() {
 
   const handleQueueVideo = async (id: string, caption: string, status: string = 'QUEUED', scheduledAt?: string) => {
     try {
-      await axios.put(`http://localhost:3000/api/videos/${id}`, {
+      await axios.put(`/api/videos/${id}`, {
         status,
         caption,
         scheduledAt: scheduledAt || null
@@ -73,7 +73,7 @@ export function Videos() {
   const handleDeleteVideo = async (id: string) => {
     if (!confirm('Tem certeza que deseja apagar este vídeo?')) return;
     try {
-      await axios.delete(`http://localhost:3000/api/videos/${id}`);
+      await axios.delete(`/api/videos/${id}`);
       fetchData();
     } catch (err) {
       alert('Erro ao apagar vídeo');
@@ -152,7 +152,7 @@ export function Videos() {
     // Grava no banco
     for (let i = 0; i < readyVideos.length; i++) {
       try {
-        await axios.put(`http://localhost:3000/api/videos/${readyVideos[i].id}`, {
+        await axios.put(`/api/videos/${readyVideos[i].id}`, {
           status: 'QUEUED',
           caption: readyVideos[i].caption,
           scheduledAt: scheduledDates[i]
@@ -172,7 +172,7 @@ export function Videos() {
     
     for (const v of readyVideos) {
       try {
-        await axios.put(`http://localhost:3000/api/videos/${v.id}`, { caption });
+        await axios.put(`/api/videos/${v.id}`, { caption });
       } catch (e) {
         console.error('Failed to apply caption to video', v.id);
       }
@@ -188,7 +188,7 @@ export function Videos() {
     for (const v of readyVideos) {
       if (v.coverUrl === coverUrl) continue;
       try {
-        await axios.put(`http://localhost:3000/api/videos/${v.id}`, { coverUrl });
+        await axios.put(`/api/videos/${v.id}`, { coverUrl });
       } catch (e) {
         console.error('Failed to apply cover to video', v.id);
       }
@@ -395,7 +395,7 @@ function VideoCard({ video, onQueue, onDelete, onApplyCaptionToAll, onApplyCover
     formData.append('cover', file);
 
     try {
-      await axios.post(`http://localhost:3000/api/videos/${video.id}/cover`, formData, {
+      await axios.post(`/api/videos/${video.id}/cover`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       onCoverUploaded();

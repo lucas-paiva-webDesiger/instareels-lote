@@ -10,7 +10,7 @@ export function Accounts() {
 
   const fetchAccounts = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/accounts');
+      const res = await axios.get('/api/accounts');
       setAccounts(res.data);
     } catch (err) {
       console.error(err);
@@ -23,18 +23,18 @@ export function Accounts() {
 
   const handleConnect = () => {
     // Redireciona o browser inteiro para o endpoint que inicia o OAuth
-    window.location.href = 'http://localhost:3000/api/accounts/meta';
+    window.location.href = '/api/accounts/meta';
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Desconectar esta conta?\nA conta será removida do Reels Manager. Isso não exclui a conta do Instagram.')) {
-      await axios.delete(`http://localhost:3000/api/accounts/${id}`);
+      await axios.delete(`/api/accounts/${id}`);
       fetchAccounts();
     }
   };
 
   const togglePause = async (id: string, isPaused: boolean) => {
-    await axios.put(`http://localhost:3000/api/accounts/${id}/settings`, { isAutomationPaused: !isPaused });
+    await axios.put(`/api/accounts/${id}/settings`, { isAutomationPaused: !isPaused });
     fetchAccounts();
   };
 

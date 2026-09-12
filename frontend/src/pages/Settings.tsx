@@ -9,7 +9,7 @@ export function Settings() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    axios.get('http://localhost:3000/api/settings')
+    axios.get('/api/settings')
       .then(res => {
         if (res.data.metaAppId) setMetaAppId(res.data.metaAppId);
         if (res.data.metaAppSecret) setMetaAppSecret(res.data.metaAppSecret);
@@ -24,7 +24,7 @@ export function Settings() {
     setMessage('');
     
     try {
-      await axios.put('http://localhost:3000/api/settings', {
+      await axios.put('/api/settings', {
         metaAppId,
         metaAppSecret,
         globalInterval

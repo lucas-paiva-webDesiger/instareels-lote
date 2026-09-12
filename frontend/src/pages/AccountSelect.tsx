@@ -17,7 +17,7 @@ export function AccountSelect() {
       return;
     }
 
-    axios.get(`http://localhost:3000/api/accounts/meta/available?session_id=${sessionId}`)
+    axios.get(`/api/accounts/meta/available?session_id=${sessionId}`)
       .then(res => {
         setAccounts(res.data);
       })
@@ -29,7 +29,7 @@ export function AccountSelect() {
 
   const handleSelect = async (instagramId: string, defaultName: string) => {
     try {
-      await axios.post('http://localhost:3000/api/accounts/meta/select', {
+      await axios.post('/api/accounts/meta/select', {
         session_id: sessionId,
         instagramId,
         internalName: defaultName

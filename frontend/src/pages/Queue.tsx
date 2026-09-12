@@ -11,8 +11,8 @@ export function Queue() {
   const fetchData = async () => {
     try {
       const [vidsRes, accsRes] = await Promise.all([
-        axios.get(`http://localhost:3000/api/videos${selectedAccountId ? `?accountId=${selectedAccountId}` : ''}`),
-        axios.get('http://localhost:3000/api/accounts')
+        axios.get(`/api/videos${selectedAccountId ? `?accountId=${selectedAccountId}` : ''}`),
+        axios.get('/api/accounts')
       ]);
       setVideos(vidsRes.data.filter((v: any) => v.status === 'QUEUED' || v.status === 'SCHEDULED' || v.status === 'PROCESSING'));
       setAccounts(accsRes.data);

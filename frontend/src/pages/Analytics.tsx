@@ -18,8 +18,8 @@ export function Analytics() {
   const fetchData = async () => {
     try {
       const [vidsRes, accsRes] = await Promise.all([
-        axios.get('http://localhost:3000/api/videos'),
-        axios.get('http://localhost:3000/api/accounts')
+        axios.get('/api/videos'),
+        axios.get('/api/accounts')
       ]);
 
       const videos = vidsRes.data;
