@@ -35,6 +35,14 @@ app.get('/health', (req, res) => {
 
 import { startWorker } from './worker';
 
+// Serve o Frontend (React) a partir da pasta dist
+const frontendPath = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendPath));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
 app.listen(PORT, () => {
   console.log(`Reels Manager Backend running on port ${PORT}`);
   startWorker();
