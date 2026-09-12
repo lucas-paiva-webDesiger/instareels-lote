@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts  InstagramAccount[]
+}
+
+model InstagramAccount {
+  id                 String   @id @default(uuid())
+  userId             String
+  name               String   // Nome interno
+  username           String   // @username no Instagram
+  instagramId        String   // ID da conta creator/business
+  facebookPageId     String   // ID da página do Facebook
+  accessToken        String   // Token criptografado longo
+  profilePictureUrl  String?
+  status             String   @default("CONNECTED") // CONNECTED, EXPIRED, ERROR
+  
+  // Configurações de agendamento em JSON (ex: { "intervalMinutes": 60, "startTime": "08:00", "endTime": "22:00", "days": [1,2,3,4,5] })
+  settings           String     @default("{}")
+  isAutomationPaused Boolean  @default(false)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  lastSyncAt         DateTime?
+
+  user               User     @relation(fields: [userId], references: [id])
+  videos             Video[]
+  insights           AccountInsight[]
+  reelsInsights      ReelInsight[]
+}
+
+model Video {
+  id           String   @id @default(uuid())
+  accountId    String
+  filename     String
+  fileUrl      String   // Caminho/URL do arquivo
+  coverUrl     String?  // Caminho/URL da capa
+  caption      String?
+  status       String   @default("READY") // UPLOADED, READY, QUEUED, PROCESSING, SCHEDULED, PUBLISHING, PUBLISHED, FAILED, PAUSED
+  
+  scheduledAt  DateTime?
+  publishedAt  DateTime?
+  
+  metaMediaId  String?  // ID do post retornado pela Meta
+  errorMessage String?
+  attempts     Int      @default(0)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  account      InstagramAccount @relation(fields: [accountId], references: [id])
+  queueItem    QueueItem?
+}
+
+model QueueItem {
+  id           String   @id @default(uuid())
+  videoId      String   @unique
+  accountId    String
+  scheduledFor DateTime // Quando deve ser processado
+  status       String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  lockId       String?  // UUID para controle de concorrência do worker
+  lockedAt     DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  video        Video    @relation(fields: [videoId], references: [id])
+}
+
+model CaptionTemplate {
+  id        String   @id @default(uuid())
+  name      String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SystemLog {
+  id        String   @id @default(uuid())
+  level     String   // INFO, ERROR, WARN
+  context   String   // VIDEO_UPLOAD, META_API, WORKER, etc
+  message   String
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+model AccountInsight {
+  id         String   @id @default(uuid())
+  accountId  String
+  date       DateTime // Data base
+  metric     String   // views, reach, followers, etc
+  value      Int
+  fetchedAt  DateTime @default(now())
+
+  account    InstagramAccount @relation(fields: [accountId], references: [id])
+  
+  @@unique([accountId, date, metric])
+}
+
+model ReelInsight {
+  id          String   @id @default(uuid())
+  accountId   String
+  metaMediaId String
+  metric      String   // views, likes, comments, shares, saves
+  value       Int
+  fetchedAt   DateTime @default(now())
+
+  account     InstagramAccount @relation(fields: [accountId], references: [id])
+  
+  @@unique([metaMediaId, metric])
+}
+
+model SystemSettings {
+  id        String   @id @default("1")
+  metaAppId String?
+  metaAppSecret String?
+  globalInterval Int @default(60)
+  updatedAt DateTime @updatedAt
+}
