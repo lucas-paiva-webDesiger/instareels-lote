@@ -1,0 +1,7 @@
+{
+  "name": "reels-manager-root",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build && cd ../backend && npm install && npx prisma generate && npx prisma db push && npx tsc",
+    "start": "cd backend && node dist/index.js"
+  }
+}
