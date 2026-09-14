@@ -389,6 +389,9 @@ function VideoCard({ video, onQueue, onDelete, onApplyCaptionToAll, onApplyCover
   const [uploadingCover, setUploadingCover] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const account = accounts.find(a => a.id === video.accountId);
+    useEffect(() => {
+    setCaption(video.caption || '');
+  }, [video.caption]);
 
   const handleAction = (action: 'QUEUE' | 'SCHEDULE' | 'PUBLISH_NOW') => {
     let status = video.status;
