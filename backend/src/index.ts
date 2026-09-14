@@ -36,11 +36,27 @@ app.get('/health', (req, res) => {
 import { startWorker } from './worker';
 
 // Serve o Frontend (React) a partir da pasta dist
+app.get('/api/widget', async (req, res) => {
+  try {
+    const queued = await prisma.video.count({ where: { status: 'QUEUED' } });
+    const published = await prisma.video.count({ where: { status: 'PUBLISHED' } });
+    const ready = await prisma.video.count({ where: { status: 'READY' } });
+    const errors = await prisma.video.count({ where: { status: 'ERROR' } });
+    res.json({ queued, published, ready, errors });
+  } catch (e) {
+    res.json({ error: true });
+  }
+});
+
+// Serve o Frontend (React) a partir da pasta dist
 const frontendPath = path.join(__dirname, '../../frontend/dist');
 app.use(express.static(frontendPath));
 
-app.use((req, res) => {
-  res.sendFile(path.join(frontendPath, 'index.html'));
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+    return res.sendFile(path.join(frontendPath, 'index.html'));
+  }
+  next();
 });
 
 app.listen(PORT, () => {
