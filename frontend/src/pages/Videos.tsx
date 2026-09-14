@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Upload, Play, Check, Trash2 } from 'lucide-react';
+import { Upload, Play, Check, Trash2, XOctagon } from 'lucide-react';
 
 export function Videos() {
   const [videos, setVideos] = useState<any[]>([]);
@@ -27,6 +27,20 @@ export function Videos() {
     const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, [selectedAccountId]);
+
+  const handleDeleteAllReady = async () => {
+    if (!selectedAccountId) return alert('Selecione uma conta no filtro acima primeiro.');
+    const readyVideos = videos.filter(v => v.accountId === selectedAccountId && (v.status === 'READY' || v.status === 'UPLOADED'));
+    if (readyVideos.length === 0) return alert('Nenhum vídeo aguardando nesta conta.');
+    if (!confirm(`Tem certeza que deseja APAGAR DEFINITIVAMENTE todos os ${readyVideos.length} vídeos da Fila desta conta?`)) return;
+    try {
+      await Promise.all(readyVideos.map(v => axios.delete(`/api/videos/${v.id}`)));
+      fetchData();
+      alert('Vídeos apagados com sucesso!');
+    } catch(e) {
+      alert('Erro ao apagar alguns vídeos.');
+    }
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -149,7 +163,6 @@ export function Videos() {
       }
     }
 
-    // Grava no banco
     for (let i = 0; i < readyVideos.length; i++) {
       try {
         await axios.put(`/api/videos/${readyVideos[i].id}`, {
@@ -223,6 +236,15 @@ export function Videos() {
               <option key={acc.id} value={acc.id}>@{acc.username}</option>
             ))}
           </select>
+
+          <button 
+            onClick={handleDeleteAllReady}
+            disabled={!selectedAccountId || readyCount === 0}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50"
+            title="Apagar Todos da Fila desta Conta"
+          >
+            <XOctagon className="w-5 h-5" /> Apagar Fila
+          </button>
 
           <input type="file" multiple accept="video/mp4,video/quicktime" ref={fileInputRef} onChange={handleUpload} className="hidden" />
           
@@ -298,9 +320,9 @@ export function Videos() {
             ) : (
               <>
                 <p className="text-slate-400 text-sm mb-4">Poste vídeos consecutivamente, aguardando um tempo fixo entre cada um.</p>
-                <div className="flex flex-wrap items-end gap-4">
+                <div className="flex flex-wrap items-start gap-6">
                   <div>
-                    <label className="block text-sm text-slate-300 mb-1">Data/Hora do 1º Post</label>
+                    <label className="block text-sm text-slate-300 mb-1">A partir de (Data e Hora)</label>
                     <input 
                       type="datetime-local" 
                       value={intervalStartDate}
@@ -308,14 +330,15 @@ export function Videos() {
                       className="bg-slate-900 border border-slate-700 text-white rounded px-3 py-2 text-sm"
                     />
                   </div>
+                  
                   <div>
                     <label className="block text-sm text-slate-300 mb-1">Intervalo (Minutos)</label>
                     <input 
                       type="number" 
-                      min="1"
                       value={batchInterval}
                       onChange={e => setBatchInterval(Number(e.target.value))}
-                      className="bg-slate-900 border border-slate-700 text-white rounded px-3 py-2 text-sm w-24"
+                      min={10}
+                      className="bg-slate-900 border border-slate-700 text-white rounded px-3 py-2 text-sm w-32"
                     />
                   </div>
                 </div>
@@ -377,7 +400,6 @@ function VideoCard({ video, onQueue, onDelete, onApplyCaptionToAll, onApplyCover
       status = 'QUEUED'; 
       schedDate = new Date(scheduledAt).toISOString();
     }
-    // Para publicar agora, enfileiramos e colocamos o agendamento pra 1 minuto atrás pra furar a fila
     if (action === 'PUBLISH_NOW') {
       status = 'QUEUED';
       schedDate = new Date(Date.now() - 60000).toISOString();
