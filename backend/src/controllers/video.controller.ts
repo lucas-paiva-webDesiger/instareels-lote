@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import path from 'path';
-import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
+import axios from 'axios';
 
 const prisma = new PrismaClient();
 
@@ -14,23 +13,34 @@ export const uploadVideo = async (req: any, res: Response) => {
     if (!file) return res.status(400).json({ error: 'No file uploaded' });
     if (!accountId) return res.status(400).json({ error: 'accountId is required' });
 
-    // Validate account ownership
     const account = await prisma.instagramAccount.findFirst({
       where: { id: accountId, userId: req.user.id }
     });
 
     if (!account) return res.status(404).json({ error: 'Account not found' });
 
-    // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(file.path, {
-      resource_type: 'video',
-      folder: 'reels'
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+       return res.status(500).json({ error: 'Supabase credentials not configured' });
+    }
+
+    const fileBuffer = fs.readFileSync(file.path);
+    
+    await axios.post(`${supabaseUrl}/storage/v1/object/reels/${file.filename}`, fileBuffer, {
+      headers: {
+        'Authorization': `Bearer ${supabaseKey}`,
+        'apikey': supabaseKey,
+        'Content-Type': file.mimetype
+      },
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity
     });
     
-    // Delete local file to save space
     try { fs.unlinkSync(file.path); } catch (e) {}
 
-    const fileUrl = result.secure_url;
+    const fileUrl = `${supabaseUrl}/storage/v1/object/public/reels/${file.filename}`;
 
     const video = await prisma.video.create({
       data: {
@@ -42,8 +52,8 @@ export const uploadVideo = async (req: any, res: Response) => {
     });
 
     res.status(201).json(video);
-  } catch (error) {
-    console.error('Upload Error:', error);
+  } catch (error: any) {
+    console.error('Upload Error:', error.response?.data || error);
     res.status(500).json({ error: 'Failed to upload video' });
   }
 };
@@ -55,16 +65,28 @@ export const uploadCover = async (req: any, res: Response) => {
 
     if (!file) return res.status(400).json({ error: 'No file uploaded' });
 
-    // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(file.path, {
-      resource_type: 'image',
-      folder: 'reels-covers'
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+       return res.status(500).json({ error: 'Supabase credentials not configured' });
+    }
+
+    const fileBuffer = fs.readFileSync(file.path);
+    
+    await axios.post(`${supabaseUrl}/storage/v1/object/reels/${file.filename}`, fileBuffer, {
+      headers: {
+        'Authorization': `Bearer ${supabaseKey}`,
+        'apikey': supabaseKey,
+        'Content-Type': file.mimetype
+      },
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity
     });
     
-    // Delete local file to save space
     try { fs.unlinkSync(file.path); } catch (e) {}
 
-    const coverUrl = result.secure_url;
+    const coverUrl = `${supabaseUrl}/storage/v1/object/public/reels/${file.filename}`;
 
     const video = await prisma.video.update({
       where: { id },
@@ -72,8 +94,8 @@ export const uploadCover = async (req: any, res: Response) => {
     });
 
     res.json(video);
-  } catch (error) {
-    console.error('Cover Upload Error:', error);
+  } catch (error: any) {
+    console.error('Cover Upload Error:', error.response?.data || error);
     res.status(500).json({ error: 'Failed to upload cover' });
   }
 };
@@ -83,7 +105,6 @@ export const getVideos = async (req: any, res: Response) => {
     const { accountId } = req.query;
     const userId = req.user.id;
 
-    // Optional filter by accountId
     let whereClause: any = { account: { userId } };
     if (accountId) {
       whereClause.accountId = accountId;
