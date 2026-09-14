@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Calendar, Clock, Edit2, Trash2 } from 'lucide-react';
+import { Calendar, Trash2, XCircle } from 'lucide-react';
 
 export function Schedules() {
   const [videos, setVideos] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<string>('');
+  const [isCanceling, setIsCanceling] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -35,12 +37,61 @@ export function Schedules() {
     }
   };
 
+  const handleCancelAll = async () => {
+    if (!selectedAccount) {
+      alert('Selecione uma conta primeiro!');
+      return;
+    }
+    
+    const accountVids = videos.filter(v => v.accountId === selectedAccount);
+    if (accountVids.length === 0) {
+      alert('Nenhum vídeo agendado para esta conta.');
+      return;
+    }
+
+    if (confirm(`Tem certeza que deseja cancelar TODOS os ${accountVids.length} agendamentos desta conta?\nEles voltarão para a fila.`)) {
+      setIsCanceling(true);
+      try {
+        await Promise.all(accountVids.map(v => 
+          axios.put(`/api/videos/${v.id}`, { scheduledAt: null })
+        ));
+        await fetchData();
+        alert('Todos os agendamentos foram cancelados com sucesso!');
+      } catch (err) {
+        alert('Ocorreu um erro ao cancelar alguns vídeos.');
+      } finally {
+        setIsCanceling(false);
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Agendamentos</h1>
           <p className="text-slate-400">Reels programados para publicação em data/hora específica.</p>
+        </div>
+        
+        <div className="flex items-center gap-3 bg-slate-800 p-2 rounded-lg border border-slate-700">
+          <select 
+            className="bg-slate-900 border border-slate-700 text-white text-sm rounded px-3 py-2 outline-none"
+            value={selectedAccount}
+            onChange={e => setSelectedAccount(e.target.value)}
+          >
+            <option value="">Selecione a conta...</option>
+            {accounts.map(acc => (
+              <option key={acc.id} value={acc.id}>@{acc.username}</option>
+            ))}
+          </select>
+          <button 
+            onClick={handleCancelAll}
+            disabled={isCanceling || !selectedAccount}
+            className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium flex items-center gap-2 disabled:opacity-50 transition-colors"
+          >
+            <XCircle className="w-4 h-4" />
+            {isCanceling ? 'Cancelando...' : 'Cancelar Todos'}
+          </button>
         </div>
       </div>
 
