@@ -30,9 +30,9 @@ export function Videos() {
 
   const handleDeleteAllReady = async () => {
     if (!selectedAccountId) return alert('Selecione uma conta no filtro acima primeiro.');
-    const readyVideos = videos.filter(v => v.accountId === selectedAccountId && (v.status === 'READY' || v.status === 'UPLOADED'));
-    if (readyVideos.length === 0) return alert('Nenhum vídeo aguardando nesta conta.');
-    if (!confirm(`Tem certeza que deseja APAGAR DEFINITIVAMENTE todos os ${readyVideos.length} vídeos da Fila desta conta?`)) return;
+    const readyVideos = videos.filter(v => v.accountId === selectedAccountId);
+    if (readyVideos.length === 0) return alert('Nenhum vídeo nesta conta.');
+    if (!confirm(`Tem certeza que deseja APAGAR DEFINITIVAMENTE todos os ${readyVideos.length} vídeos desta conta?`)) return;
     try {
       await Promise.all(readyVideos.map(v => axios.delete(`/api/videos/${v.id}`)));
       fetchData();
@@ -163,6 +163,7 @@ export function Videos() {
       }
     }
 
+    // Grava no banco
     for (let i = 0; i < readyVideos.length; i++) {
       try {
         await axios.put(`/api/videos/${readyVideos[i].id}`, {
@@ -239,7 +240,7 @@ export function Videos() {
 
           <button 
             onClick={handleDeleteAllReady}
-            disabled={!selectedAccountId || readyCount === 0}
+            disabled={!selectedAccountId}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50"
             title="Apagar Todos da Fila desta Conta"
           >
@@ -320,9 +321,9 @@ export function Videos() {
             ) : (
               <>
                 <p className="text-slate-400 text-sm mb-4">Poste vídeos consecutivamente, aguardando um tempo fixo entre cada um.</p>
-                <div className="flex flex-wrap items-start gap-6">
+                <div className="flex flex-wrap items-end gap-4">
                   <div>
-                    <label className="block text-sm text-slate-300 mb-1">A partir de (Data e Hora)</label>
+                    <label className="block text-sm text-slate-300 mb-1">Data/Hora do 1º Post</label>
                     <input 
                       type="datetime-local" 
                       value={intervalStartDate}
@@ -330,15 +331,14 @@ export function Videos() {
                       className="bg-slate-900 border border-slate-700 text-white rounded px-3 py-2 text-sm"
                     />
                   </div>
-                  
                   <div>
                     <label className="block text-sm text-slate-300 mb-1">Intervalo (Minutos)</label>
                     <input 
                       type="number" 
+                      min="1"
                       value={batchInterval}
                       onChange={e => setBatchInterval(Number(e.target.value))}
-                      min={10}
-                      className="bg-slate-900 border border-slate-700 text-white rounded px-3 py-2 text-sm w-32"
+                      className="bg-slate-900 border border-slate-700 text-white rounded px-3 py-2 text-sm w-24"
                     />
                   </div>
                 </div>
